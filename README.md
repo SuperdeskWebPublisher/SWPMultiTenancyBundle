@@ -1,2 +1,3 @@
-# SWPMultiTenancyBundle
-It provides an architecture to build multi-tenant PHP applications.
+Multi-Tenancy Bundle [![Build Status](https://travis-ci.org/SuperdeskWebPublisher/SWPMultiTenancyBundle.svg?branch=master)](https://travis-ci.org/SuperdeskWebPublisher/SWPMultiTenancyBundle) [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/SuperdeskWebPublisher/SWPMultiTenancyBundle/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/SuperdeskWebPublisher/SWPMultiTenancyBundle/?branch=master) [![SensioLabsInsight](https://insight.sensiolabs.com/projects/0b3663df-5d53-4cfa-a925-5521e0ff7268/mini.png)](https://insight.sensiolabs.com/projects/0b3663df-5d53-4cfa-a925-5521e0ff7268)
+This bundle provides tools to build multi-tenant architecture for PHP applications.
+=================
