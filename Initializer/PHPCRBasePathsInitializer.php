@@ -89,13 +89,7 @@ class PHPCRBasePathsInitializer implements InitializerInterface
     private function getBasePaths()
     {
         $tenants = $this->tenantProvider->getAvailableTenants();
-
-        return $this->genereteBasePaths($tenants);
-    }
-
-    private function genereteBasePaths(array $tenants = array())
-    {
-        $basePaths = array();
+        $basePaths = [];
         foreach ($tenants as $tenant) {
             $subdomain = $tenant['subdomain'];
 
