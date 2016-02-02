@@ -108,7 +108,7 @@ class TenantAwareRouterCompilerPassTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException Symfony\Component\DependencyInjection\Exception\RuntimeException
+     * @expectedException \Symfony\Component\DependencyInjection\Exception\RuntimeException
      */
     public function testNoBundle()
     {

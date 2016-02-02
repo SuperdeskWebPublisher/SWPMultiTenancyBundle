@@ -18,12 +18,18 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\Common\EventSubscriber;
 use SWP\Component\MultiTenancy\Model\TenantAwareInterface;
 use SWP\Component\MultiTenancy\Context\TenantContextInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Doctrine listener used to set tenant before the persist.
  */
 class TenantSubscriber implements EventSubscriber
 {
+    /**
+     * @var ContainerInterface
+     */
+    protected $container;
+
     /**
      * @var TenantContextInterface
      */
@@ -32,11 +38,11 @@ class TenantSubscriber implements EventSubscriber
     /**
      * Constructor.
      *
-     * @param TenantContextInterface $tenantContext
+     * @param ContainerInterface $container
      */
-    public function __construct(TenantContextInterface $tenantContext)
+    public function __construct(ContainerInterface $container)
     {
-        $this->tenantContext = $tenantContext;
+        $this->container = $container;
     }
 
     /**
@@ -67,6 +73,10 @@ class TenantSubscriber implements EventSubscriber
             // skip when tenant is already set
             if (null !== $entity->getTenant()) {
                 return;
+            }
+
+            if (null === $this->tenantContext) {
+                $this->tenantContext = $this->container->get('swp_multi_tenancy.tenant_context');
             }
 
             $entity->setTenant($this->tenantContext->getTenant());

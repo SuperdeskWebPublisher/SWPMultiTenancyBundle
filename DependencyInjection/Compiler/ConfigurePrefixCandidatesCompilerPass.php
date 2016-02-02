@@ -19,8 +19,7 @@ use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\Exception\RuntimeException;
 
 /**
- * Configures Symfony CMF PrefixCandidates service by adding
- * custom configurator which sets tenant aware base paths.
+ * Configures Symfony CMF PrefixCandidates to make the prefixes tenant aware.
  */
 class ConfigurePrefixCandidatesCompilerPass implements CompilerPassInterface
 {
@@ -42,9 +41,12 @@ class ConfigurePrefixCandidatesCompilerPass implements CompilerPassInterface
         }
 
         $container->getDefinition('cmf_routing.phpcr_candidates_prefix')
-            ->setConfigurator([
-                new Reference('swp_multi_tenancy.candidates_configurator'),
-                'configure',
+            ->setClass($container->getParameter('swp_multi_tenancy.prefix_candidates.class'))
+            ->addMethodCall('setPathBuilder', [
+                new Reference('swp_multi_tenancy.path_builder'),
+            ])
+            ->addMethodCall('setRoutePathsNames', [
+                $container->getParameter('swp_multi_tenancy.persistence.phpcr.route_basepaths'),
             ])
         ;
     }

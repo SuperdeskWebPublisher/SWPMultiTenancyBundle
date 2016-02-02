@@ -15,17 +15,18 @@ namespace spec\SWP\MultiTenancyBundle\EventListener;
 
 use PhpSpec\ObjectBehavior;
 use Prophecy\Argument;
-use SWP\Component\MultiTenancy\Context\TenantContextInterface;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Event\LifecycleEventArgs;
+use SWP\Component\MultiTenancy\Context\TenantContextInterface;
 use SWP\Component\MultiTenancy\Model\Tenant;
 use SWP\Component\MultiTenancy\Model\TenantAwareInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class TenantSubscriberSpec extends ObjectBehavior
 {
-    public function let(TenantContextInterface $tenantContext)
+    public function let(ContainerInterface $container)
     {
-        $this->beConstructedWith($tenantContext);
+        $this->beConstructedWith($container);
     }
 
     public function it_is_initializable()
@@ -38,9 +39,9 @@ class TenantSubscriberSpec extends ObjectBehavior
         $this->shouldImplement('Doctrine\Common\EventSubscriber');
     }
 
-    public function it_subscribes_to_event()
+    public function it_subscribes_to_an_event()
     {
-        $this::getSubscribedEvents()->shouldReturn(array(Events::prePersist));
+        $this::getSubscribedEvents()->shouldReturn([Events::prePersist]);
     }
 
     public function it_should_skip_when_tenant_is_set_on_tenant_aware_object(
@@ -57,10 +58,11 @@ class TenantSubscriberSpec extends ObjectBehavior
         $this->prePersist($event)->shouldReturn(null);
     }
 
-    public function it_set_the_tenant_on_pre_persist_doctrine_event(
-        $tenantContext,
+    public function it_sets_the_tenant_on_pre_persist_doctrine_event(
+        TenantContextInterface $tenantContext,
         LifecycleEventArgs $event,
-        TenantAwareInterface $tenantAware
+        TenantAwareInterface $tenantAware,
+        $container
     ) {
         $tenant = new Tenant();
         $tenant->setSubdomain('example.com');
@@ -69,6 +71,7 @@ class TenantSubscriberSpec extends ObjectBehavior
         $tenantAware->getTenant()->shouldBeCalled()->willReturn(null);
         $event->getEntity()->willReturn($tenantAware);
         $tenantContext->getTenant()->shouldBeCalled()->willReturn($tenant);
+        $container->get('swp_multi_tenancy.tenant_context')->willReturn($tenantContext);
 
         $tenantAware->setTenant($tenant)->shouldBeCalled();
 

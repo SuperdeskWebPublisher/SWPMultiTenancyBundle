@@ -24,6 +24,7 @@
                 <file>*Bundle.php</file>
                 <directory>Resources/</directory>
                 <directory>Doctrine/</directory>
+                <directory>Context/</directory>
                 <directory>EventListener/</directory>
                 <directory>Repository/</directory>
                 <directory>spec/</directory>

@@ -1,6 +1,6 @@
 parameters:
     swp_multi_tenancy.path_builder.class: SWP\Component\MultiTenancy\PathBuilder\TenantAwarePathBuilder
-    swp_multi_tenancy.candidates_configurator.class: SWP\MultiTenancyBundle\Doctrine\PHPCR\CmfCandidatesConfigurator
+    swp_multi_tenancy.prefix_candidates.class: SWP\MultiTenancyBundle\Doctrine\PHPCR\PrefixCandidates
     swp_multi_tenancy.phpcr.initializer.class: SWP\MultiTenancyBundle\Initializer\PHPCRBasePathsInitializer
     swp_multi_tenancy.phpcr.generic_initializer.class: Doctrine\Bundle\PHPCRBundle\Initializer\GenericInitializer
 
@@ -26,17 +26,8 @@ services:
     swp_multi_tenancy.path_builder:
         class: %swp_multi_tenancy.path_builder.class%
         arguments:
-            - "@swp_multi_tenancy.tenant_resolver"
             - "@swp_multi_tenancy.tenant_context"
             - %swp_multi_tenancy.persistence.phpcr.basepath%
-        calls:
-            - [setRequestStack, ['@request_stack']]
-
-    swp_multi_tenancy.candidates_configurator:
-        class: %swp_multi_tenancy.candidates_configurator.class%
-        arguments:
-            - "@swp_multi_tenancy.path_builder"
-            - %swp_multi_tenancy.persistence.phpcr.route_basepaths%
 
     swp_multi_tenancy.tenant_aware_router:
         class: %swp_multi_tenancy.persistence.phpcr.router.class%

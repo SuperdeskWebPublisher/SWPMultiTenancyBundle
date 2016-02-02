@@ -13,54 +13,20 @@
  */
 namespace SWP\MultiTenancyBundle\Tests\DependencyInjection\Compiler;
 
+use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase;
 use SWP\MultiTenancyBundle\DependencyInjection\Compiler\ConfigurePrefixCandidatesCompilerPass;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
-class ConfigurePrefixCandidatesCompilerPassTest extends \PHPUnit_Framework_TestCase
+class ConfigurePrefixCandidatesCompilerPassTest extends AbstractCompilerPassTestCase
 {
-    private $container;
-    private $definition;
-    private $pass;
-
-    public function setUp()
-    {
-        $this->container = $this->getMock('Symfony\Component\DependencyInjection\ContainerBuilder');
-        $this->definition = $this->getMock('Symfony\Component\DependencyInjection\Definition');
-        $this->pass = new ConfigurePrefixCandidatesCompilerPass();
-    }
-
     /**
-     * @covers SWP\MultiTenancyBundle\DependencyInjection\Compiler\ConfigurePrefixCandidatesCompilerPass::process
+     * @param ContainerBuilder $container
      */
-    public function testProcess()
+    protected function registerCompilerPass(ContainerBuilder $container)
     {
-        $this->container->expects($this->any())
-            ->method('hasParameter')
-            ->will($this->returnValueMap([
-                ['swp_multi_tenancy.backend_type_phpcr', true],
-                ['cmf_routing.backend_type_phpcr', true],
-            ]));
-
-        $this->container->expects($this->once())
-            ->method('getParameter')
-            ->with('kernel.bundles')
-            ->will($this->returnValue(array(
-                'CmfRoutingBundle' => true,
-            )));
-
-        $this->container->expects($this->once())
-            ->method('getDefinition')
-            ->with('cmf_routing.phpcr_candidates_prefix')
-            ->will($this->returnValue($this->definition));
-
-        $this->definition->expects($this->once())
-            ->method('setConfigurator')
-            ->with([
-                new Reference('swp_multi_tenancy.candidates_configurator'),
-                'configure',
-            ]);
-
-        $this->pass->process($this->container);
+        $container->addCompilerPass(new ConfigurePrefixCandidatesCompilerPass());
     }
 
     /**
@@ -68,14 +34,11 @@ class ConfigurePrefixCandidatesCompilerPassTest extends \PHPUnit_Framework_TestC
      */
     public function testProcessPHPCRBackendDisabled()
     {
-        $this->container->expects($this->any())
-            ->method('hasParameter')
-            ->will($this->returnValueMap([
-                ['swp_multi_tenancy.backend_type_phpcr', false],
-                ['cmf_routing.backend_type_phpcr', true],
-            ]));
+        $this->container->setParameter('cmf_routing.backend_type_phpcr', true);
 
-        $this->assertNull($this->pass->process($this->container));
+        $this->compile();
+
+        $this->assertContainerBuilderHasParameter('cmf_routing.backend_type_phpcr');
     }
 
     /**
@@ -83,48 +46,68 @@ class ConfigurePrefixCandidatesCompilerPassTest extends \PHPUnit_Framework_TestC
      */
     public function testProcessCMFBackendDisabled()
     {
-        $this->container->expects($this->any())
-            ->method('hasParameter')
-            ->will($this->returnValueMap([
-                ['swp_multi_tenancy.backend_type_phpcr', true],
-                ['cmf_routing.backend_type_phpcr', false],
-            ]));
+        $this->container->setParameter('swp_multi_tenancy.backend_type_phpcr', true);
 
-        $this->assertNull($this->pass->process($this->container));
+        $this->compile();
+
+        $this->assertContainerBuilderHasParameter('swp_multi_tenancy.backend_type_phpcr');
     }
 
     /**
      * @covers SWP\MultiTenancyBundle\DependencyInjection\Compiler\ConfigurePrefixCandidatesCompilerPass::process
      */
-    public function testProcessWithoutConfig()
+    public function testProcess()
     {
-        $this->container->expects($this->any())
-            ->method('hasParameter')
-            ->will($this->returnValueMap([
-                ['swp_multi_tenancy.backend_type_phpcr', false],
-                ['cmf_routing.backend_type_phpcr', false],
-            ]));
+        $this->container->setParameter('swp_multi_tenancy.backend_type_phpcr', true);
+        $this->container->setParameter('cmf_routing.backend_type_phpcr', true);
+        $this->container->setParameter('kernel.bundles', [
+            'CmfRoutingBundle' => true
+        ]);
+        $this->container->setParameter('swp_multi_tenancy.persistence.phpcr.route_basepaths', ['routes']);
+        $this->container->setParameter(
+            'swp_multi_tenancy.prefix_candidates.class',
+            'SWP\MultiTenancyBundle\Doctrine\PHPCR\PrefixCandidates'
+        );
 
-        $this->assertNull($this->pass->process($this->container));
+        $collectingService = new Definition();
+        $this->setDefinition('cmf_routing.phpcr_candidates_prefix', $collectingService);
+
+        $this->compile();
+
+        $this->assertContainerBuilderHasService(
+            'cmf_routing.phpcr_candidates_prefix',
+            'SWP\MultiTenancyBundle\Doctrine\PHPCR\PrefixCandidates'
+        );
+
+        $this->assertContainerBuilderHasServiceDefinitionWithMethodCall(
+            'cmf_routing.phpcr_candidates_prefix',
+            'setPathBuilder',
+            [
+                new Reference('swp_multi_tenancy.path_builder')
+            ]
+        );
+
+        $this->assertContainerBuilderHasServiceDefinitionWithMethodCall(
+            'cmf_routing.phpcr_candidates_prefix',
+            'setRoutePathsNames',
+            [
+                $this->container->getParameter('swp_multi_tenancy.persistence.phpcr.route_basepaths')
+            ]
+        );
     }
 
     /**
-     * @expectedException Symfony\Component\DependencyInjection\Exception\RuntimeException
+     * @expectedException \Symfony\Component\DependencyInjection\Exception\RuntimeException
      */
-    public function testNoBundle()
+    public function testProcessWhenNoBundle()
     {
-        $this->container->expects($this->any())
-            ->method('hasParameter')
-            ->will($this->returnValueMap([
-                ['swp_multi_tenancy.backend_type_phpcr', true],
-                ['cmf_routing.backend_type_phpcr', true],
-            ]));
+        $this->container->setParameter('swp_multi_tenancy.backend_type_phpcr', true);
+        $this->container->setParameter('cmf_routing.backend_type_phpcr', true);
 
-        $this->container->expects($this->once())
-            ->method('getParameter')
-            ->with('kernel.bundles')
-            ->will($this->returnValue(array()));
+        $this->container->setParameter('kernel.bundles', []);
 
-        $this->pass->process($this->container);
+        $this->compile();
+
+        $this->assertContainerBuilderHasParameter('swp_multi_tenancy.backend_type_phpcr');
     }
 }

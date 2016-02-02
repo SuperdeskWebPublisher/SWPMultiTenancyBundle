@@ -15,30 +15,20 @@ namespace SWP\MultiTenancyBundle\EventListener;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use SWP\Component\MultiTenancy\Context\TenantContextInterface;
-use SWP\Component\MultiTenancy\Resolver\TenantResolverInterface;
 
 /**
- * Tenant Listener class.
+ * TenantableListener class.
  *
- * It makes sure there is always tenant set in context and queries.
- * It resolves current tenant based on subdomain and sets the resolved
- * tenant in context so it can be available everywhere in the system.
- * Additionally it makes sure all SELECT queries are tenant aware.
+ * It makes sure all SELECT queries are tenant aware.
  */
-class TenantListener implements EventSubscriberInterface
+class TenantableListener implements EventSubscriberInterface
 {
     /**
      * @var TenantContextInterface
      */
     protected $tenantContext;
-
-    /**
-     * @var TenantResolverInterface
-     */
-    protected $tenantResolver;
 
     /**
      * @var EntityManagerInterface
@@ -48,26 +38,19 @@ class TenantListener implements EventSubscriberInterface
     /**
      * Construct.
      *
-     * @param EntityManagerInterface  $entityManager
-     * @param TenantContextInterface  $tenantContext
-     * @param TenantResolverInterface $tenantResolver
+     * @param EntityManagerInterface $entityManager
+     * @param TenantContextInterface $tenantContext
      */
-    public function __construct(
-        EntityManagerInterface $entityManager,
-        TenantContextInterface $tenantContext,
-        TenantResolverInterface $tenantResolver
-    ) {
+    public function __construct(EntityManagerInterface $entityManager, TenantContextInterface $tenantContext)
+    {
         $this->entityManager = $entityManager;
         $this->tenantContext = $tenantContext;
-        $this->tenantResolver = $tenantResolver;
     }
 
     /**
-     * Resolve and set tenant on kernel.request.
-     *
-     * @param GetResponseEvent $event
+     * Enables tenantable filter on kernel.request.
      */
-    public function onKernelRequest(GetResponseEvent $event)
+    public function onKernelRequest()
     {
         $tenant = $this->tenantContext->getTenant();
         $tenantId = $tenant->getId();
@@ -77,15 +60,6 @@ class TenantListener implements EventSubscriberInterface
                 ->enable('tenantable')
                 ->setParameter('tenantId', $tenantId);
         }
-
-        if (null !== $tenantId) {
-            return;
-        }
-
-        $request = $event->getRequest();
-        $this->tenantContext->setTenant(
-            $this->tenantResolver->resolve($request->getHost())
-        );
     }
 
     /**
