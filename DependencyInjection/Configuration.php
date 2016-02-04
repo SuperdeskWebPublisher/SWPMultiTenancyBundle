@@ -45,7 +45,7 @@ class Configuration implements ConfigurationInterface
                                     ->info('Route base paths names')
                                 ->end()
                                 ->scalarNode('content_basepath')
-                                    ->defaultValue(['content'])
+                                    ->defaultValue('content')
                                     ->info('Content base path name')
                                 ->end()
                                 ->scalarNode('site_document_class')
