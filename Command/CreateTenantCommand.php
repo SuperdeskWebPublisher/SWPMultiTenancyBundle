@@ -65,7 +65,7 @@ EOT
             $name = 'Default tenant';
         }
 
-        $tenant = $this->getTenantRepository()->findOneBySubdomain($subdomain);
+        $tenant = $this->getTenantRepository()->findBySubdomain($subdomain);
         if (null !== $tenant) {
             throw new \InvalidArgumentException(sprintf('Tenant with subdomain "%s" already exists!', $subdomain));
         }
@@ -75,7 +75,13 @@ EOT
         $this->getEntityManager()->persist($tenant);
         $this->getEntityManager()->flush();
 
-        $output->writeln(sprintf('Tenant <info>%s</info> has been created!', $name));
+        $output->writeln(
+            sprintf(
+                'Tenant <info>%s</info> has been created and <info>%s</info>!',
+                $name,
+                $tenant->isEnabled() ? 'enabled' : 'disabled'
+            )
+        );
     }
 
     /**
