@@ -11,16 +11,6 @@
             "email": "rafal.muszynski@sourcefabric.org"
         }
     ],
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/takeit/multi-tenancy"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/takeit/common"
-        }
-    ],
     "require": {
         "php": ">=5.4|^7.0",
         "symfony/framework-bundle": "~2.4|~3.0",
