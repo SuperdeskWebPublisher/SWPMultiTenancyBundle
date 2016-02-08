@@ -29,6 +29,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 class CreateTenantCommand extends ContainerAwareCommand
 {
     /**
+     * @var array
+     */
+    protected $arguments = ['subdomain', 'name'];
+
+    /**
      * {@inheritdoc}
      */
     protected function configure()
@@ -37,8 +42,8 @@ class CreateTenantCommand extends ContainerAwareCommand
             ->setName('swp:tenant:create')
             ->setDescription('Creates a new tenant.')
             ->setDefinition([
-                new InputArgument('subdomain', InputArgument::OPTIONAL, 'Subdomain name'),
-                new InputArgument('name', InputArgument::OPTIONAL, 'Tenant name'),
+                new InputArgument($this->arguments[0], InputArgument::OPTIONAL, 'Subdomain name'),
+                new InputArgument($this->arguments[1], InputArgument::OPTIONAL, 'Tenant name'),
                 new InputOption('disabled', null, InputOption::VALUE_NONE, 'Set the tenant as a disabled'),
                 new InputOption('default', null, InputOption::VALUE_NONE, 'Creates the default tenant'),
             ])
@@ -55,8 +60,8 @@ EOT
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $subdomain = $input->getArgument('subdomain');
-        $name = $input->getArgument('name');
+        $subdomain = $input->getArgument($this->arguments[0]);
+        $name = $input->getArgument($this->arguments[1]);
         $default = $input->getOption('default');
         $disabled = $input->getOption('disabled');
 
@@ -89,37 +94,33 @@ EOT
      */
     protected function interact(InputInterface $input, OutputInterface $output)
     {
-        $default = $input->getOption('default');
-        if (!$input->getArgument('subdomain') && !$default) {
-            $subdomain = $this->getHelper('dialog')->askAndValidate(
-                $output,
-                '<question>Please enter subdomain:</question>',
-                function ($subdomain) {
-                    if (empty($subdomain)) {
-                        throw new \RuntimeException('Subdomain can not be empty');
-                    }
-
-                    return $subdomain;
-                }
-            );
-
-            $input->setArgument('subdomain', $subdomain);
+        foreach ($this->arguments as $value) {
+            $this->askAndValidateInteract($input, $output, $value);
         }
+    }
 
-        if (!$input->getArgument('name') && !$default) {
-            $name = $this->getHelper('dialog')->askAndValidate(
+    /**
+     * @param InputInterface  $input
+     * @param OutputInterface $output
+     * @param string          $name
+     */
+    protected function askAndValidateInteract(InputInterface $input, OutputInterface $output, $name)
+    {
+        $default = $input->getOption('default');
+        if (!$input->getArgument($name) && !$default) {
+            $argument = $this->getHelper('dialog')->askAndValidate(
                 $output,
-                '<question>Please enter name:</question>',
-                function ($name) {
-                    if (empty($name)) {
-                        throw new \RuntimeException('Name can not be empty');
+                '<question>Please enter '.$name.':</question>',
+                function ($argument) use ($name) {
+                    if (empty($argument)) {
+                        throw new \RuntimeException('The '.$name.' can not be empty');
                     }
 
-                    return $name;
+                    return $argument;
                 }
             );
 
-            $input->setArgument('name', $name);
+            $input->setArgument($name, $argument);
         }
     }
 
