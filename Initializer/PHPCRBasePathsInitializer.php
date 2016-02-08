@@ -52,23 +52,31 @@ class PHPCRBasePathsInitializer implements InitializerInterface
     private $siteClass;
 
     /**
+     * @var string
+     */
+    private $documentClass;
+
+    /**
      * Construct.
      *
      * @param array                           $paths          Content paths
      * @param TenantProviderInterface         $tenantProvider Tenants provider
      * @param TenantAwarePathBuilderInterface $pathBuilder    Path builder
      * @param string                          $siteClass      Site document class
+     * @param string                          $documentClass  Page document FQCN
      */
     public function __construct(
         array $paths,
         TenantProviderInterface $tenantProvider,
         TenantAwarePathBuilderInterface $pathBuilder,
-        $siteClass
+        $siteClass,
+        $documentClass
     ) {
         $this->paths = $paths;
         $this->tenantProvider = $tenantProvider;
         $this->pathBuilder = $pathBuilder;
         $this->siteClass = $siteClass;
+        $this->documentClass = $documentClass;
     }
 
     /**
@@ -78,21 +86,17 @@ class PHPCRBasePathsInitializer implements InitializerInterface
     {
         $session = $registry->getConnection();
         $this->dm = $registry->getManager();
+        $tenants = $this->tenantProvider->getAvailableTenants();
 
-        $basePaths = $this->getBasePaths();
+        $this->generateBasePaths($session, $tenants);
         $this->dm->flush();
-        if (count($basePaths)) {
-            $this->createBasePaths($session, $basePaths);
-        }
     }
 
-    private function getBasePaths()
+    private function generateBasePaths(SessionInterface $session, array $tenants = [])
     {
-        $tenants = $this->tenantProvider->getAvailableTenants();
         $basePaths = [];
         foreach ($tenants as $tenant) {
             $subdomain = $tenant['subdomain'];
-
             $site = $this->dm->find($this->siteClass, $this->pathBuilder->build('/', $subdomain));
             if (!$site) {
                 $site = new $this->siteClass();
@@ -109,16 +113,35 @@ class PHPCRBasePathsInitializer implements InitializerInterface
             }
         }
 
-        return $basePaths;
+        $this->dm->flush();
+
+        if (count($basePaths) > 0) {
+            $this->createBasePaths($session, $basePaths, $tenants);
+        }
     }
 
-    private function createBasePaths(SessionInterface $session, array $basePaths)
+    private function createBasePaths(SessionInterface $session, array $basePaths, array $tenants)
     {
+        $route = null;
+        $home = 'homepage';
         foreach ($basePaths as $path) {
             NodeHelper::createPath($session, $path);
+            $homepage = $this->dm->find(null, $path.'/'.$home);
+            if (null === $homepage) {
+                $route = new $this->documentClass();
+                $route->setParentDocument($this->dm->find(null, $path));
+                $route->setName($home);
+                $this->dm->persist($route);
+            }
         }
 
         $session->save();
+        foreach ($tenants as $tenant) {
+            $site = $this->dm->find($this->siteClass, $this->pathBuilder->build('/', $tenant['subdomain']));
+            if (null !== $site && null === $site->getHomepage()) {
+                $site->setHomepage($route);
+            }
+        }
     }
 
     /**

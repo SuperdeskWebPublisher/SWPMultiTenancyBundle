@@ -20,6 +20,7 @@ services:
             - "@swp_multi_tenancy.tenant_provider"
             - "@swp_multi_tenancy.path_builder"
             - %swp_multi_tenancy.persistence.phpcr.site_document.class%
+            - %swp_multi_tenancy.persistence.phpcr.document.class%
         tags:
             - { name: "doctrine_phpcr.initializer", priority: 50 }
 

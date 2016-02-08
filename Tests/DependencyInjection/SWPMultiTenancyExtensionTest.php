@@ -36,9 +36,15 @@ class SWPMultiTenancyExtensionTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($container->getParameter('swp_multi_tenancy.backend_type_phpcr'));
         $this->assertEquals('/swp', $container->getParameter('swp_multi_tenancy.persistence.phpcr.basepath'));
         $this->assertEquals(
-            'SWP\MultiTenancyBundle\Tests\Site',
+            'SWP\MultiTenancyBundle\Document\Site',
             $container->getParameter('swp_multi_tenancy.persistence.phpcr.site_document.class')
         );
+
+        $this->assertEquals(
+            'SWP\MultiTenancyBundle\Document\Page',
+            $container->getParameter('swp_multi_tenancy.persistence.phpcr.document.class')
+        );
+
         $this->assertEquals('content', $container->getParameter('swp_multi_tenancy.persistence.phpcr.content_basepath'));
         $this->assertEquals(
             'SWP\MultiTenancyBundle\Routing\TenantAwareRouter',
@@ -81,7 +87,6 @@ class SWPMultiTenancyExtensionTest extends \PHPUnit_Framework_TestCase
                 'phpcr' => array(
                     'enabled' => true,
                     'content_basepath' => 'content',
-                    'site_document_class' => 'SWP\MultiTenancyBundle\Tests\Site',
                     'route_basepaths' => array('routes1', 'routes2'),
                 ),
             ),
