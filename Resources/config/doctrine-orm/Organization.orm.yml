@@ -1,7 +1,7 @@
-SWP\Component\MultiTenancy\Model\Tenant:
+SWP\Component\MultiTenancy\Model\Organization:
     type: mappedSuperclass
-    table: swp_tenant
-    repositoryClass: SWP\Bundle\MultiTenancyBundle\Repository\TenantRepository
+    table: swp_organization
+    repositoryClass: SWP\Bundle\MultiTenancyBundle\Doctrine\ORM\OrganizationRepository
     gedmo:
         soft_deleteable:
             field_name: deletedAt
@@ -17,10 +17,9 @@ SWP\Component\MultiTenancy\Model\Tenant:
         name:
             type: string
             length: 255
-            unique: true
-        subdomain:
+        code:
             type: string
-            length: 255
+            unique: true
         enabled:
             type: boolean
         createdAt:
@@ -37,3 +36,7 @@ SWP\Component\MultiTenancy\Model\Tenant:
         deletedAt:
             type: datetime
             nullable: true
+    oneToMany:
+        tenants:
+            targetEntity: SWP\Component\MultiTenancy\Model\Tenant
+            mappedBy: organization
